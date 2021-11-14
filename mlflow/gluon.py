@@ -13,7 +13,6 @@ from mlflow.models.model import MLMODEL_FILE_NAME
 from mlflow.models.signature import ModelSignature
 from mlflow.models.utils import ModelInputExample, _save_example
 from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.annotations import experimental
 from mlflow.utils.environment import (
     _mlflow_conda_env,
     _validate_env_arguments,
@@ -37,8 +36,7 @@ FLAVOR_NAME = "gluon"
 _MODEL_SAVE_PATH = "net"
 
 
-@experimental
-def load_model(model_uri, ctx):
+def load_model(model_uri, ctx, dst_path=None):
     """
     Load a Gluon model from a local file or a run.
 
@@ -55,6 +53,9 @@ def load_model(model_uri, ctx):
                       `Referencing Artifacts <https://www.mlflow.org/docs/latest/concepts.html#
                       artifact-locations>`_.
     :param ctx: Either CPU or GPU.
+    :param dst_path: The local filesystem path to which to download the model artifact.
+                     This directory must already exist. If unspecified, a local output
+                     path will be created.
 
     :return: A Gluon model instance.
 
@@ -69,7 +70,7 @@ def load_model(model_uri, ctx):
     from mxnet import gluon
     from mxnet import sym
 
-    local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
+    local_model_path = _download_artifact_from_uri(artifact_uri=model_uri, output_path=dst_path)
 
     model_arch_path = os.path.join(local_model_path, "data", _MODEL_SAVE_PATH) + "-symbol.json"
     model_params_path = os.path.join(local_model_path, "data", _MODEL_SAVE_PATH) + "-0000.params"
@@ -131,7 +132,6 @@ def _load_pyfunc(path):
     return _GluonModelWrapper(m)
 
 
-@experimental
 @format_docstring(LOG_MODEL_PARAM_DOCS.format(package_name="mxnet"))
 def save_model(
     gluon_model,
@@ -262,7 +262,6 @@ def get_default_conda_env():
     return _mlflow_conda_env(additional_pip_deps=get_default_pip_requirements())
 
 
-@experimental
 @format_docstring(LOG_MODEL_PARAM_DOCS.format(package_name="mxnet"))
 def log_model(
     gluon_model,
@@ -342,7 +341,6 @@ def log_model(
     )
 
 
-@experimental
 @autologging_integration(FLAVOR_NAME)
 def autolog(
     log_models=True,

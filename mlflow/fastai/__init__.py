@@ -39,7 +39,6 @@ from mlflow.utils.requirements_utils import _get_pinned_requirement
 from mlflow.utils.file_utils import write_to
 from mlflow.utils.docstring_utils import format_docstring, LOG_MODEL_PARAM_DOCS
 from mlflow.utils.model_utils import _get_flavor_configuration
-from mlflow.utils.annotations import experimental
 from mlflow.utils.autologging_utils import (
     log_fn_args_as_params,
     safe_patch,
@@ -324,7 +323,7 @@ def _load_pyfunc(path):
     return _FastaiModelWrapper(_load_model(path))
 
 
-def load_model(model_uri):
+def load_model(model_uri, dst_path=None):
     """
     Load a fastai model from a local file or a run.
 
@@ -338,6 +337,9 @@ def load_model(model_uri):
                       For more information about supported URI schemes, see
                       `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#
                       artifact-locations>`_.
+    :param dst_path: The local filesystem path to which to download the model artifact.
+                     This directory must already exist. If unspecified, a local output
+                     path will be created.
 
     :return: A fastai model (an instance of `fastai.Learner`_).
 
@@ -359,13 +361,12 @@ def load_model(model_uri):
         loaded_model = mlflow.fastai.load_model(model_uri)
         results = loaded_model.predict(predict_data)
     """
-    local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
+    local_model_path = _download_artifact_from_uri(artifact_uri=model_uri, output_path=dst_path)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
     model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.fastai"))
     return _load_model(path=model_file_path)
 
 
-@experimental
 @autologging_integration(FLAVOR_NAME)
 def autolog(
     log_models=True,
